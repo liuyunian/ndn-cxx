@@ -199,6 +199,35 @@ public: // Data fields
   Data&
   setSignatureValue(const Block& value);
 
+//****************************add****************************************************************
+  /** @brief Get contentIndex
+   */
+  uint32_t
+  getContentIndex() const;
+
+  /** @brief Set contentIndex
+   *  @return a reference to this Data, to allow chaining
+   */
+  Data&
+  setContentIndex(uint32_t contentIndex);
+
+
+  /** @brief Get contentLength
+   */
+  uint16_t
+  getContentLength() const;
+
+  /** @brief Set contentLength
+   *  @return a reference to this Data, to allow chaining
+   */
+  Data&
+  setContentLength(uint32_t contentLength);
+
+
+
+//*******************************************************************************************************
+
+
 public: // MetaInfo fields
   uint32_t
   getContentType() const
@@ -239,6 +268,8 @@ private:
   MetaInfo m_metaInfo;
   Block m_content;
   Signature m_signature;
+  mutable optional<uint32_t>m_contentIndex;   //add
+  mutable optional<uint32_t>m_contentLength;     //add
 
   mutable Block m_wire;
   mutable Name m_fullName; ///< cached FullName computed from m_wire

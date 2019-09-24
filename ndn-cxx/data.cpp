@@ -49,7 +49,9 @@ Data::wireEncode(EncodingImpl<TAG>& encoder, bool wantUnsignedPortionOnly) const
 {
   // Data ::= DATA-TLV TLV-LENGTH
   //            Name
-  //            MetaInfo?
+  //            MetaInfo? 
+  //            contentIndex? add
+  //            contentLength? add
   //            Content?
   //            SignatureInfo
   //            SignatureValue
@@ -69,6 +71,24 @@ Data::wireEncode(EncodingImpl<TAG>& encoder, bool wantUnsignedPortionOnly) const
 
   // Content
   totalLength += encoder.prependBlock(getContent());
+
+
+//***************************************add************************************************************************
+  //contentLength
+  uint16_t contentLength = this->getContentLength(); 
+  totalLength += encoder.prependByteArray(reinterpret_cast<uint8_t*>(&contentLength), sizeof(contentLength));
+  totalLength += encoder.prependVarNumber(sizeof(contentLength));
+  totalLength += encoder.prependVarNumber(tlv::ContentLength);
+
+
+  //contentIndex
+  uint32_t contentIndex = this->getContentIndex(); 
+  totalLength += encoder.prependByteArray(reinterpret_cast<uint8_t*>(&contentIndex), sizeof(contentIndex));
+  totalLength += encoder.prependVarNumber(sizeof(contentIndex));
+  totalLength += encoder.prependVarNumber(tlv::ContentIndex);
+//*******************************************************************************************************************
+
+
 
   // MetaInfo
   totalLength += getMetaInfo().wireEncode(encoder);
@@ -123,7 +143,9 @@ Data::wireDecode(const Block& wire)
 {
   // Data ::= DATA-TLV TLV-LENGTH
   //            Name
-  //            MetaInfo?
+  //            MetaInfo? 
+  //            contentIndex? add
+  //            contentLength? add
   //            Content?
   //            SignatureInfo
   //            SignatureValue
@@ -141,6 +163,8 @@ Data::wireDecode(const Block& wire)
   m_metaInfo = MetaInfo();
   m_content = Block(tlv::Content);
   m_signature = Signature();
+  m_contentIndex.reset();
+  m_contentLength.reset();
   m_fullName.clear();
 
   for (++element; element != m_wire.elements_end(); ++element) {
@@ -153,28 +177,60 @@ Data::wireDecode(const Block& wire)
         lastElement = 2;
         break;
       }
-      case tlv::Content: {
+      //*************************************************************************************
+      case tlv::ContentIndex: {
         if (lastElement >= 3) {
-          NDN_THROW(Error("Content element is out of order"));
+          BOOST_THROW_EXCEPTION(Error("ContentIndex element is out of order"));
         }
-        m_content = *element;
+        uint32_t contentIndex = 0;
+        if (element->value_size() != sizeof(contentIndex)) {
+          BOOST_THROW_EXCEPTION(Error("ContentIndex element is malformed"));
+        }
+        std::memcpy(&contentIndex, element->value(), sizeof(contentIndex));
+        m_contentIndex = contentIndex;
         lastElement = 3;
         break;
       }
-      case tlv::SignatureInfo: {
+
+      case tlv::ContentLength: {
         if (lastElement >= 4) {
-          NDN_THROW(Error("SignatureInfo element is out of order"));
+          BOOST_THROW_EXCEPTION(Error("ContentLength element is out of order"));
         }
-        m_signature.setInfo(*element);
+        uint16_t contentLength = 0;
+        if (element->value_size() != sizeof(contentLength)) {
+          BOOST_THROW_EXCEPTION(Error("ContentLength element is malformed"));
+        }
+        std::memcpy(&contentLength, element->value(), sizeof(contentLength));
+        m_contentLength = contentLength;
         lastElement = 4;
         break;
       }
-      case tlv::SignatureValue: {
+
+
+
+      //********************************************************************
+      case tlv::Content: {
         if (lastElement >= 5) {
+          NDN_THROW(Error("Content element is out of order"));
+        }
+        m_content = *element;
+        lastElement = 5;
+        break;
+      }
+      case tlv::SignatureInfo: {
+        if (lastElement >= 6) {
+          NDN_THROW(Error("SignatureInfo element is out of order"));
+        }
+        m_signature.setInfo(*element);
+        lastElement = 6;
+        break;
+      }
+      case tlv::SignatureValue: {
+        if (lastElement >= 7) {
           NDN_THROW(Error("SignatureValue element is out of order"));
         }
         m_signature.setValue(*element);
-        lastElement = 5;
+        lastElement = 7;
         break;
       }
       default: {
@@ -227,6 +283,28 @@ Data::setMetaInfo(const MetaInfo& metaInfo)
   m_metaInfo = metaInfo;
   return *this;
 }
+
+//*************************************************add************************************************
+uint32_t
+Data::getContentIndex() const
+{
+  if (!m_contentIndex) {
+    m_contentIndex = 0;
+  }
+  return *m_contentIndex;
+}
+
+uint16_t
+Data::getContentLength() const
+{
+  if (!m_contentLength) {
+    m_contentLength = 1024;
+  }
+  return *m_contentLength;
+}
+//*********************************************************************************************************
+
+
 
 const Block&
 Data::getContent() const
