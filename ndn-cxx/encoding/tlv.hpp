@@ -71,6 +71,8 @@ enum : uint32_t {
   CanBePrefix                     = 33,
   MustBeFresh                     = 18,
   ForwardingHint                  = 30,
+  ContentIndex                    = 11, // add: 内容起始地址
+  ContentLength                   = 38, // add: 内容长度
   Nonce                           = 10,
   InterestLifetime                = 12,
   HopLimit                        = 34,

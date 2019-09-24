@@ -39,6 +39,8 @@ class Data;
  */
 const time::milliseconds DEFAULT_INTEREST_LIFETIME = 4_s;
 
+const uint16_t DEFAULT_INTEREST_CONTENTLENGTH = 1024;		// add
+
 /** @brief Represents an Interest packet.
  */
 class Interest : public PacketBase, public std::enable_shared_from_this<Interest>
@@ -254,6 +256,25 @@ public: // element access
   {
     return m_nonce.has_value();
   }
+//===============================================ADD==================================================
+  /** @brief Check if the ContentIndex element is present.
+   * add
+   */
+  // bool
+  // hasContentIndex() const
+  // {
+  //   return m_contentIndex.has_value();
+  // }
+
+  /** @brief Check if the ContentLength element is present.
+   * add
+   */
+  // bool
+  // hasContentLength() const
+  // {
+  //   return m_contentLength.has_value();
+  // }
+//=======================================================================================================
 
   /** @brief Get nonce value.
    *
@@ -267,6 +288,22 @@ public: // element access
   Interest&
   setNonce(uint32_t nonce);
 
+  //=============================================ADD===========================================
+
+  uint32_t
+  getContentIndex() const;
+
+	Interest&
+  setContentIndex(uint32_t index);
+
+	uint16_t
+  getContentLength() const;
+
+	Interest&
+  setContentLength(uint16_t length);
+
+  //==========================================================================================
+
   /** @brief Change nonce value.
    *
    *  If the Nonce element is present, the new nonce value will differ from the old value.
@@ -274,6 +311,16 @@ public: // element access
    */
   void
   refreshNonce();
+
+	//=============================================ADD==========================================
+
+	// void
+  // refreshContentIndex();
+
+	// void
+  // refreshContentLength();
+
+	//==========================================================================================
 
   time::milliseconds
   getInterestLifetime() const
@@ -482,6 +529,8 @@ private:
   Selectors m_selectors; // NDN Packet Format v0.2 only
   mutable bool m_isCanBePrefixSet;
   mutable optional<uint32_t> m_nonce;
+  mutable optional<uint32_t> m_contentIndex;
+  mutable optional<uint16_t> m_contentLength;
   time::milliseconds m_interestLifetime;
   DelegationList m_forwardingHint;
   Block m_parameters; // NDN Packet Format v0.3 only

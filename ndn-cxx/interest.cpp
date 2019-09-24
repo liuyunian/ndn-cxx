@@ -116,6 +116,8 @@ Interest::encode02(EncodingImpl<TAG>& encoder) const
   // Interest ::= INTEREST-TYPE TLV-LENGTH
   //                Name
   //                Selectors?
+	// 								ContentIndex? -- add
+	//								ContentLength? -- add
   //                Nonce
   //                InterestLifetime?
   //                ForwardingHint?
@@ -136,6 +138,18 @@ Interest::encode02(EncodingImpl<TAG>& encoder) const
   // Nonce
   uint32_t nonce = getNonce(); // if nonce was unset, getNonce generates a random nonce
   totalLength += encoder.prependByteArrayBlock(tlv::Nonce, reinterpret_cast<uint8_t*>(&nonce), sizeof(nonce));
+
+	//=============================================== ADD ==================================================
+
+	// ContentLength
+	uint16_t length = getContentLength();
+  totalLength += encoder.prependByteArrayBlock(tlv::ContentLength, reinterpret_cast<uint8_t*>(&length), sizeof(length));
+
+	// ContentIndex
+  uint32_t index = getContentIndex();
+  totalLength += encoder.prependByteArrayBlock(tlv::ContentIndex, reinterpret_cast<uint8_t*>(&index), sizeof(index));
+
+	// =========================================================================================================
 
   // Selectors
   if (hasSelectors()) {
@@ -162,6 +176,8 @@ Interest::encode03(EncodingImpl<TAG>& encoder) const
   //                CanBePrefix?
   //                MustBeFresh?
   //                ForwardingHint?
+	// 								ContentIndex? -- add
+	//								ContentLength? -- add
   //                Nonce?
   //                InterestLifetime?
   //                HopLimit?
@@ -185,6 +201,18 @@ Interest::encode03(EncodingImpl<TAG>& encoder) const
   // Nonce
   uint32_t nonce = getNonce(); // if nonce was unset, getNonce generates a random nonce
   totalLength += encoder.prependByteArrayBlock(tlv::Nonce, reinterpret_cast<uint8_t*>(&nonce), sizeof(nonce));
+
+	//=============================================== ADD ==================================================
+
+	// ContentLength
+	uint16_t length = getContentLength();
+  totalLength += encoder.prependByteArrayBlock(tlv::ContentLength, reinterpret_cast<uint8_t*>(&length), sizeof(length));
+
+	// ContentIndex
+  uint32_t index = getContentIndex();
+  totalLength += encoder.prependByteArrayBlock(tlv::ContentIndex, reinterpret_cast<uint8_t*>(&index), sizeof(index));
+
+	// =========================================================================================================
 
   // ForwardingHint
   if (!getForwardingHint().empty()) {
@@ -269,6 +297,37 @@ Interest::decode02()
   else {
     m_selectors = {};
   }
+	// =========================================== ADD ===================================
+
+	// ContentIndex
+	if (element != m_wire.elements_end() && element->type() == tlv::ContentIndex) {
+    uint32_t index = 0;
+    if (element->value_size() != sizeof(index)) {
+      NDN_THROW(Error("ContentIndex element is malformed"));
+    }
+    std::memcpy(&index, element->value(), sizeof(index));
+    m_contentIndex = index;
+    ++element;
+  }
+  else {
+    return false;
+  }
+
+	// ContentLength
+	if (element != m_wire.elements_end() && element->type() == tlv::ContentLength) {
+    uint16_t length = 0;
+    if (element->value_size() != sizeof(length)) {
+      NDN_THROW(Error("ContentLength element is malformed"));
+    }
+    std::memcpy(&length, element->value(), sizeof(length));
+    m_contentLength = length;
+    ++element;
+  }
+  else {
+    return false;
+  }
+	
+	// ==================================================================================
 
   // Nonce
   if (element != m_wire.elements_end() && element->type() == tlv::Nonce) {
@@ -313,6 +372,8 @@ Interest::decode03()
   //                CanBePrefix?
   //                MustBeFresh?
   //                ForwardingHint?
+	// 								ContentIndex? -- add
+	//								ContentLength? -- add
   //                Nonce?
   //                InterestLifetime?
   //                HopLimit?
@@ -330,6 +391,8 @@ Interest::decode03()
 
   m_selectors = Selectors().setMaxSuffixComponents(1); // CanBePrefix=0
   m_nonce.reset();
+	m_contentIndex.reset();		// add
+	m_contentLength.reset();	// add
   m_interestLifetime = DEFAULT_INTEREST_LIFETIME;
   m_forwardingHint = {};
   m_parameters = {};
@@ -366,8 +429,34 @@ Interest::decode03()
         lastElement = 4;
         break;
       }
-      case tlv::Nonce: {
+			case tlv::ContentIndex: {
         if (lastElement >= 5) {
+          NDN_THROW(Error("ContentIndex element is out of order"));
+        }
+				uint16_t index = 0;
+        if (element->value_size() != sizeof(index)) {
+          NDN_THROW(Error("ContentIndex element is malformed"));
+        }
+        std::memcpy(&index, element->value(), sizeof(index));
+        m_contentIndex = index;
+        lastElement = 5;
+        break;
+      }
+			case tlv::ContentLength: {
+        if (lastElement >= 6) {
+          NDN_THROW(Error("ContentLength element is out of order"));
+        }
+				uint16_t length = 0;
+        if (element->value_size() != sizeof(length)) {
+          NDN_THROW(Error("ContentLength element is malformed"));
+        }
+        std::memcpy(&length, element->value(), sizeof(length));
+        m_contentLength = length;
+        lastElement = 6;
+        break;
+      }
+      case tlv::Nonce: {
+        if (lastElement >= 7) {
           NDN_THROW(Error("Nonce element is out of order"));
         }
         uint32_t nonce = 0;
@@ -376,34 +465,34 @@ Interest::decode03()
         }
         std::memcpy(&nonce, element->value(), sizeof(nonce));
         m_nonce = nonce;
-        lastElement = 5;
+        lastElement = 7;
         break;
       }
       case tlv::InterestLifetime: {
-        if (lastElement >= 6) {
+        if (lastElement >= 8) {
           NDN_THROW(Error("InterestLifetime element is out of order"));
         }
         m_interestLifetime = time::milliseconds(readNonNegativeInteger(*element));
-        lastElement = 6;
+        lastElement = 8;
         break;
       }
       case tlv::HopLimit: {
-        if (lastElement >= 7) {
+        if (lastElement >= 9) {
           break; // HopLimit is non-critical, ignore out-of-order appearance
         }
         if (element->value_size() != 1) {
           NDN_THROW(Error("HopLimit element is malformed"));
         }
         // TLV-VALUE is ignored
-        lastElement = 7;
+        lastElement = 9;
         break;
       }
       case tlv::ApplicationParameters: {
-        if (lastElement >= 8) {
+        if (lastElement >= 10) {
           break; // ApplicationParameters is non-critical, ignore out-of-order appearance
         }
         m_parameters = *element;
-        lastElement = 8;
+        lastElement = 10;
         break;
       }
       default: {
@@ -561,6 +650,44 @@ Interest::setNonce(uint32_t nonce)
   m_wire.reset();
   return *this;
 }
+
+//=============================================ADD==========================================
+
+uint32_t
+Interest::getContentIndex() const
+{
+  if (!m_contentIndex) {
+    m_contentIndex = 0;
+  }
+  return *m_contentIndex;
+}
+
+Interest&
+Interest::setContentIndex(uint32_t index)
+{
+  m_contentIndex = index;
+  m_wire.reset();
+  return *this;
+}
+
+uint16_t
+Interest::getContentLength() const
+{
+  if (!m_contentLength) {
+    m_contentLength = DEFAULT_INTEREST_CONTENTLENGTH;
+  }
+  return *m_contentIndex;
+}
+
+Interest&
+Interest::setContentLength(uint16_t length)
+{
+  m_contentLength = length;
+  m_wire.reset();
+  return *this;
+}
+
+//==========================================================================================
 
 void
 Interest::refreshNonce()
