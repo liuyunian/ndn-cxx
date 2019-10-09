@@ -621,6 +621,11 @@ Interest::matchesData(const Data& data) const
     }
   }
 
+    // check ContentIndex & ContentLength
+    if(data.getContentIndex() != m_contentIndex || data.getContentLength() != m_contentLength){
+        return false;
+    }
+
   return true;
 }
 
