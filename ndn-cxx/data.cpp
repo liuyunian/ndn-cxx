@@ -294,6 +294,13 @@ Data::getContentIndex() const
   return *m_contentIndex;
 }
 
+Data&
+Data::setContentIndex(uint32_t index){
+  resetWire();
+  m_contentIndex = index;
+  return *this;
+}
+
 uint16_t
 Data::getContentLength() const
 {
@@ -301,6 +308,13 @@ Data::getContentLength() const
     m_contentLength = 1024;
   }
   return *m_contentLength;
+}
+
+Data&
+Data::setContentLength(uint16_t length){
+  resetWire();
+  m_contentLength = length;
+  return *this;
 }
 //*********************************************************************************************************
 

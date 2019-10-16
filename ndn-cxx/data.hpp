@@ -209,7 +209,7 @@ public: // Data fields
    *  @return a reference to this Data, to allow chaining
    */
   Data&
-  setContentIndex(uint32_t contentIndex);
+  setContentIndex(uint32_t index);
 
 
   /** @brief Get contentLength
@@ -221,9 +221,7 @@ public: // Data fields
    *  @return a reference to this Data, to allow chaining
    */
   Data&
-  setContentLength(uint32_t contentLength);
-
-
+  setContentLength(uint16_t length);
 
 //*******************************************************************************************************
 
