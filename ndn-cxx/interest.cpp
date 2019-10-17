@@ -622,7 +622,7 @@ Interest::matchesData(const Data& data) const
   }
 
     // check ContentIndex & ContentLength
-    if(data.getContentIndex() != m_contentIndex || data.getContentLength() != m_contentLength){
+    if(data.getContentIndex() != this->getContentIndex() || data.getContentLength() != this->getContentLength()){
         return false;
     }
 
@@ -662,7 +662,7 @@ uint32_t
 Interest::getContentIndex() const
 {
   if (!m_contentIndex) {
-    m_contentIndex = 0;
+    m_contentIndex = DEFAULT_INTEREST_CONTENTINDEX;
   }
   return *m_contentIndex;
 }
@@ -681,7 +681,7 @@ Interest::getContentLength() const
   if (!m_contentLength) {
     m_contentLength = DEFAULT_INTEREST_CONTENTLENGTH;
   }
-  return *m_contentIndex;
+  return *m_contentLength;
 }
 
 Interest&

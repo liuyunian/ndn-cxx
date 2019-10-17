@@ -289,7 +289,7 @@ uint32_t
 Data::getContentIndex() const
 {
   if (!m_contentIndex) {
-    m_contentIndex = 0;
+    m_contentIndex = DEFAULT_DATA_CONTENTINDEX;
   }
   return *m_contentIndex;
 }
@@ -305,7 +305,7 @@ uint16_t
 Data::getContentLength() const
 {
   if (!m_contentLength) {
-    m_contentLength = 1024;
+    m_contentLength = DEFAULT_DATA_CONTENTLENGTH;
   }
   return *m_contentLength;
 }

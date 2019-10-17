@@ -30,6 +30,9 @@
 
 namespace ndn {
 
+const uint32_t DEFAULT_DATA_CONTENTINDEX = 1;           // add
+const uint16_t DEFAULT_DATA_CONTENTLENGTH = 1024;		// add
+
 /** @brief Represents a Data packet.
  */
 class Data : public PacketBase, public std::enable_shared_from_this<Data>

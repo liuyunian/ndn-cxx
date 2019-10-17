@@ -38,7 +38,7 @@ class Data;
  *  @brief default value for InterestLifetime
  */
 const time::milliseconds DEFAULT_INTEREST_LIFETIME = 4_s;
-
+const uint32_t DEFAULT_INTEREST_CONTENTINDEX = 1;           // add
 const uint16_t DEFAULT_INTEREST_CONTENTLENGTH = 1024;		// add
 
 /** @brief Represents an Interest packet.
